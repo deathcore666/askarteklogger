@@ -5,17 +5,40 @@ const moment = require('moment');
 const ip = require('ip');
 
 const cassandra = require('./cassandra');
-const logLevel = require('./constants/logLevels');
+const logLevels = require('./constants/logLevels');
+const defaultConfigs = {
+    taskId: null,
+    component: "SCORING",
+    time: moment().toISOString(),
+    logLevel: logLevels.OFF,
+    text: null,
+};
 
-let componentName = null;
-let taskId = null;
+let logConfigs = {};
+let initLogLevel = null;
 
-exports.logInit = (_componentName, _taskId) => {
+exports.logInit = (configs) => {
     console.log("Initialising service file logging");
-    componentName = _componentName;
-    taskId = _taskId;
 
-    console.log("Service file logging initialised successfully! Log records are stored in ");
+    //Setting default settings if none provided
+    logConfigs = {...defaultConfigs, ...configs};
+    if(logConfigs.logLevel === logLevels.OFF) {
+        initLogLevel = 0;
+    } else if(logConfigs.logLevel === logLevels.FATAL) {
+        initLogLevel = 1;
+    } else if(logConfigs.logLevel === logLevels.ERROR) {
+        initLogLevel = 2;
+    } else if(logConfigs.logLevel === logLevels.WARN) {
+        initLogLevel = 3;
+    } else if(logConfigs.logLevel === logLevels.INFO) {
+        initLogLevel = 4;
+    } else if(logConfigs.logLevel === logLevels.DEBUG) {
+        initLogLevel = 5;
+    } else if(logConfigs.logLevel === logLevels.TRACE) {
+        initLogLevel = 6;
+    }
+
+    console.log("Service file logging initialised successfully!");
 
     //Setting up a routine for old log files deletion (once in 25hrs)
     deleteOldLogs();
@@ -28,82 +51,91 @@ const deleteOldLogs = () => {
 };
 
 exports.logFatal = (_msg) => {
-    let msg_text = componentName + ": " + moment().format("YYYY-MM-DD HH:mm:ss") + " " + _msg;
-    let msg = {
-        taskId: taskId,
-        service: componentName,
-        time: moment().toISOString(),
-        type: logLevel.FATAL,
-        text: _msg
-    };
-    console.log(logLevel.FATAL + ': ' + msg_text);
-    cassandra.insertLog(msg);
-
+    if(initLogLevel >= 1) {
+        let msg_text = logConfigs.component + ": " + moment().format("YYYY-MM-DD HH:mm:ss") + " " + _msg;
+        let msg = {
+            taskId: logConfigs.taskId,
+            component: logConfigs.component,
+            time: moment().toISOString(),
+            logLevel: logLevels.FATAL,
+            text: _msg
+        };
+        console.log(logLevels.FATAL + ': ' + msg_text);
+        cassandra.insertLog(msg);
+    }
 };
 
 exports.logError = (_msg) => {
-    let msg_text = componentName + ": " + moment().format("YYYY-MM-DD HH:mm:ss") + " " + _msg;
-    let msg = {
-        taskId: taskId,
-        service: componentName,
-        time: moment().toISOString(),
-        type: logLevel.ERROR,
-        text: _msg
-    };
-    console.log(logLevel.ERROR + ': ' + msg_text);
-    cassandra.insertLog(msg);
-
+    if(initLogLevel >= 2) {
+        let msg_text = logConfigs.component + ": " + moment().format("YYYY-MM-DD HH:mm:ss") + " " + _msg;
+        let msg = {
+            taskId: logConfigs.taskId,
+            component: logConfigs.component,
+            time: moment().toISOString(),
+            logLevel: logLevels.ERROR,
+            text: _msg
+        };
+        console.log(logLevels.ERROR + ': ' + msg_text);
+        cassandra.insertLog(msg);
+    }
 };
 
 exports.logWarn = (_msg) => {
-    let msg_text = componentName + ": " + moment().format("YYYY-MM-DD HH:mm:ss") + " " + _msg;
-    let msg = {
-        taskId: taskId,
-        service: componentName,
-        time: moment().toISOString(),
-        type: logLevel.WARN,
-        text: _msg
-    };
-    console.log(logLevel.WARN + ': ' + msg_text);
-    cassandra.insertLog(msg);
-
+    if(initLogLevel >= 3) {
+        let msg_text = logConfigs.component + ": " + moment().format("YYYY-MM-DD HH:mm:ss") + " " + _msg;
+        let msg = {
+            taskId: logConfigs.taskId,
+            component: logConfigs.component,
+            time: moment().toISOString(),
+            logLevel: logLevels.WARN,
+            text: _msg
+        };
+        console.log(logLevels.WARN + ': ' + msg_text);
+        cassandra.insertLog(msg);
+    }
 };
 
 exports.logInfo = (_msg) => {
-    let msg_text = componentName + ": " + moment().format("YYYY-MM-DD HH:mm:ss") + " " + _msg;
-    let msg = {
-        taskId: taskId,
-        service: componentName,
-        time: moment().toISOString(),
-        type: logLevel.INFO,
-        text: _msg
-    };
-    console.log(logLevel.INFO + ': ' + msg_text);
-    cassandra.insertLog(msg);
+    if (initLogLevel >= 4) {
+        let msg_text = logConfigs.component + ": " + moment().format("YYYY-MM-DD HH:mm:ss") + " " + _msg;
+        let msg = {
+            taskId: logConfigs.taskId,
+            component: logConfigs.component,
+            time: moment().toISOString(),
+            logLevel: logLevels.INFO,
+            text: _msg
+        };
+        console.log(logLevels.INFO + ': ' + msg_text);
+        cassandra.insertLog(msg);
+    }
 };
 
 exports.logDebug = (_msg) => {
-    let msg_text = componentName + ": " + moment().format("YYYY-MM-DD HH:mm:ss") + " " + _msg;
-    let msg = {
-        taskId: taskId,
-        service: componentName,
-        time: moment().toISOString(),
-        type: logLevel.DEBUG,
-        text: _msg
-    };
-    console.log(logLevel.DEBUG + ': ' + msg_text);
-    cassandra.insertLog(msg);
+    if (initLogLevel >= 5) {
+        let msg_text = logConfigs.component + ": " + moment().format("YYYY-MM-DD HH:mm:ss") + " " + _msg;
+        let msg = {
+            taskId: logConfigs.taskId,
+            component: logConfigs.component,
+            time: moment().toISOString(),
+            logLevel: logLevels.DEBUG,
+            text: _msg
+        };
+        console.log(logLevel.DEBUG + ': ' + msg_text);
+        cassandra.insertLog(msg);
+    }
 };
 
 exports.logTrace = (_msg) => {
-    let msg_text = componentName + ": " + moment().format("YYYY-MM-DD HH:mm:ss") + " " + _msg;
-    let msg = {
-        taskId: taskId,
-        service: componentName,
-        time: moment().toISOString(),
-        type: logLevel.TRACE,
-        text: _msg
-    };
-    console.log(logLevel.TRACE + ': ' + msg_text);
-    cassandra.insertLog(msg);
+    if (initLogLevel >= 6) {
+        let msg_text = logConfigs.component + ": " + moment().format("YYYY-MM-DD HH:mm:ss") + " " + _msg;
+        let msg = {
+            taskId: logConfigs.taskId,
+            component: logConfigs.component,
+            time: moment().toISOString(),
+            logLevel: logLevels.TRACE,
+            text: _msg
+        };
+        console.log(logLevels.TRACE + ': ' + msg_text);
+        cassandra.insertLog(msg);
+    }
 };
