@@ -10,6 +10,8 @@
   "license": "UNLICENSED",
   "dependencies": {
     "async": "^2.6.0",
+    "babel-cli": "^6.26.0",
+    "babel-preset-env": "^1.6.1",
     "cassandra-driver": "^3.4.1",
     "fs": "0.0.1-security",
     "ip": "^1.1.5",

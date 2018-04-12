@@ -1,17 +1,13 @@
-const fs = require('fs');
-const mkdirp = require('mkdirp');
-const path = require('path');
 const moment = require('moment');
-const ip = require('ip');
 
 const cassandra = require('./cassandra');
 const logLevels = require('./constants/logLevels');
+
 const defaultConfigs = {
     taskId: null,
     component: "SCORING",
     time: moment().toISOString(),
     logLevel: logLevels.OFF,
-    text: null,
 };
 
 let logConfigs = {};
@@ -21,7 +17,14 @@ exports.logInit = (configs) => {
     console.log("Initialising service file logging");
 
     //Setting default settings if none provided
-    logConfigs = {...defaultConfigs, ...configs};
+    // logConfigs = {...defaultConfigs, ...configs};
+
+    if(configs) {
+        logConfigs = configs;
+    } else {
+        logConfigs = defaultConfigs;
+    }
+
     if(logConfigs.logLevel === logLevels.OFF) {
         initLogLevel = 0;
     } else if(logConfigs.logLevel === logLevels.FATAL) {
@@ -39,15 +42,6 @@ exports.logInit = (configs) => {
     }
 
     console.log("Service file logging initialised successfully!");
-
-    //Setting up a routine for old log files deletion (once in 25hrs)
-    deleteOldLogs();
-    setInterval(deleteOldLogs, 86400000)
-};
-
-
-const deleteOldLogs = () => {
-    //TODO
 };
 
 exports.logFatal = (_msg) => {
@@ -120,7 +114,7 @@ exports.logDebug = (_msg) => {
             logLevel: logLevels.DEBUG,
             text: _msg
         };
-        console.log(logLevel.DEBUG + ': ' + msg_text);
+        console.log(logLevels.DEBUG + ': ' + msg_text);
         cassandra.insertLog(msg);
     }
 };
