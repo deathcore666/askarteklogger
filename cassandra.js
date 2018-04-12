@@ -8,7 +8,7 @@ const client = new cassandra.Client({
 
 
 exports.insertLog = (msg) => {
-    const query = 'INSERT INTO logs.testlogs (taskid, time, service, loglevel, text) VALUES (?, ? , ?, ?, ?)';
+    const query = 'INSERT INTO logs.testlogs1 (taskid, time, service, loglevel, text) VALUES (?, ? , ?, ?, ?)';
     const params = [msg.taskId, msg.time, msg.component, msg.logLevel, msg.text ];
     client.execute(query, params, { prepare: true }, onInsertLog)
 };
