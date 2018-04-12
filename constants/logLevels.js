@@ -1,5 +1,6 @@
-export const ERROR = 'ERROR';
-export const FATAL = 'FATAL';
-export const INFO = 'INFO';
-export const DEBUG = 'DEBUG';
-export const TRACE = 'TRACE';
+export const ERROR  = 'ERROR';
+export const FATAL  = 'FATAL';
+export const INFO   = 'INFO';
+export const DEBUG  = 'DEBUG';
+export const TRACE  = 'TRACE';
+export const WARN   = 'WARN';

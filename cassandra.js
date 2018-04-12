@@ -1,0 +1,6 @@
+
+
+
+exports.insertLog = (msg) => {
+
+};
