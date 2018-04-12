@@ -1,5 +1,5 @@
 const moment = require('moment');
-const logger = require('./logger');
+// const logger = require('./logger');
 const logLevels = require('./constants/logLevels');
 
 const testConfigs = {
@@ -9,5 +9,5 @@ const testConfigs = {
     logLevel: logLevels.TRACE,
 };
 
-logger.logInit(testConfigs);
-logger.logDebug('Someshit just happened yo');
+// logger.logInit(testConfigs);
+// logger.logDebug('Someshit just happened yo');
