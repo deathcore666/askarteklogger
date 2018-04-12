@@ -17,13 +17,12 @@ exports.logInit = (configs) => {
     console.log("Initialising service file logging");
 
     //Setting default settings if none provided
-    // logConfigs = {...defaultConfigs, ...configs};
-
-    if(configs) {
-        logConfigs = configs;
-    } else {
-        logConfigs = defaultConfigs;
-    }
+    logConfigs = {...defaultConfigs, ...configs};
+    // if(configs) {
+    //     logConfigs = configs;
+    // } else {
+    //     logConfigs = defaultConfigs;
+    // }
 
     if(logConfigs.logLevel === logLevels.OFF) {
         initLogLevel = 0;
