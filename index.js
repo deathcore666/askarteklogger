@@ -1,7 +1,10 @@
 const moment = require('moment');
+const fs = require('fs');
+const path = require('path');
 
 const cassandra = require('./cassandra');
 const logLevels = require('./constants/logLevels');
+const configPath = './config';
 
 const defaultConfigs = {
     taskId: null,
@@ -10,16 +13,44 @@ const defaultConfigs = {
     logLevel: logLevels.OFF,
 };
 
-let logConfigs = {};
+let logConfigs = null;
 let initLogLevel = null;
+
+// moment.tz.setDefault("America/New_York");
 
 exports.logInit = (configs) => {
     console.log("Initialising service file logging");
 
+
     //Setting default settings if none provided
-    logConfigs = {...defaultConfigs, ...configs};
+    if(!configs) {
+        let isReadError = false;
+        const confFiles = fs.readdirSync(configPath);
+        for (let i in confFiles) {
+            let currFileName = confFiles[i];
+
+            if (path.extname(currFileName) !== '.json') continue;
+
+            let currConfigName = currFileName.replace(/\.[^/.]+$/, "");
+            let currFilePath = path.join(configPath, currFileName);
+
+            let currConfig = null;
+            try {
+                currConfig = JSON.parse(fs.readFileSync(currFilePath, 'utf8'));
+                if (currConfigName === 'logConfig') {
+                    logConfigs = currConfig;
+                }
+            } catch (err) {
+                isReadError = true;
+                console.error('Unable to read configuration file: ' + currFilePath + '. Error: ' + err);
+            }
+        }
+    } else {
+        logConfigs = configs;
+    }
 
     console.log("Service file logging initialised successfully!");
+    console.log(moment().toISOString());
 };
 
 exports.logFatal = (_msg) => {
@@ -35,8 +66,6 @@ exports.logFatal = (_msg) => {
         text: _msg
     };
     console.log(logLevels.FATAL + ': ' + msg_text);
-    cassandra.insertLog(msg);
-
 };
 
 exports.logError = (_msg) => {

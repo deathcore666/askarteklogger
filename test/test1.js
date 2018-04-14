@@ -1,6 +1,7 @@
 const moment = require('moment');
-// const logger = require('./logger');
-const logLevels = require('./constants/logLevels');
+const logger = require('../index');
+const logLevels = require('../constants/logLevels');
+const db = require('../cassandra');
 
 const testConfigs = {
     taskId: 123,
@@ -9,5 +10,14 @@ const testConfigs = {
     logLevel: logLevels.TRACE,
 };
 
-// logger.logInit(testConfigs);
-// logger.logDebug('Someshit just happened yo');
+const msg = {
+    taskId: 12,
+    time: moment().toISOString(),
+    service: 'M1-1',
+    logLevel: logLevels.TRACE,
+    text: 'test'
+};
+
+logger.logInit();
+db.init();
+db.insertLog(msg);
