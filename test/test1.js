@@ -18,6 +18,6 @@ const msg = {
     text: 'test'
 };
 
-logger.logInit();
+logger.init();
 db.init();
 db.insertLog(msg);

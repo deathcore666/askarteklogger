@@ -3,7 +3,7 @@ const async = require('async');
 const path = require('path');
 const fs = require('fs');
 
-const configPath = './config';
+const configPath = './configs';
 let client = null;
 
 exports.init = (config) => {
