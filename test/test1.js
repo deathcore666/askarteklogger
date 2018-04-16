@@ -18,6 +18,11 @@ const msg = {
     text: 'test'
 };
 
+const dbConf = {
+    contactPoints: ['192.168.0.166'],
+    keyspace: 'logs',
+    tableName: 'testlogs1',
+};
+
 logger.init();
-db.init();
-db.insertLog(msg);
+// logger.logFatal('FATALITY');
