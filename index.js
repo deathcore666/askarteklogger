@@ -1,4 +1,5 @@
 const moment = require('moment');
+const _ = require('lodash');
 
 const cassandra = require('./cassandra');
 const logLevels = require('./constants/logLevels');
@@ -14,40 +15,51 @@ const logLevelsMap = {
 };
 
 const defaultConfigs = {
-    contactPoints: ['192.168.1.166'],
+    contactPoints: ['192.168.0.166'],
     keyspace: 'logs',
     tableName: 'testlogs1',
-    taskId: 666,
-    component: "SCORING",
-    time: moment().toISOString(),
-    logLevel: logLevels.WARN,
+    taskId: 0,
+    component: "",
 };
 
 let logConfigs = null;
 let initLogLevel = null;
 
+const validateConfigs = (configs) => {
+    return new Promise((resolve, reject) => {
+        for (let key in defaultConfigs) {
+            if (!(_.has(configs, key)))
+                reject(`${key} is missing from config list`);
+        }
+
+        if (configs.contactPoints.length < 1) {
+            reject(`${configs.contactPoints} must have at least 1 item`);
+        }
+
+    });
+};
+
 exports.init = (configs) => {
-    console.log("Initialising service file logging");
-
     //Setting default settings if none provided
-    if(!configs) {
-        logConfigs = defaultConfigs;
-    } else {
-        logConfigs = configs;
-    }
 
-    let connect = cassandra.connect(logConfigs);
+    let valid = validateConfigs(configs);
+    valid.then(() => {
+        logConfigs = configs;
+    }).catch((err) => {
+        console.error('Configs validation failed: ', err);
+        logConfigs = defaultConfigs;
+    });
+
+    let connect = cassandra.connect(defaultConfigs);
     connect.then((result) => {
-        console.log(result);
-        console.log('Service file logging initialised successfully!');
-    },(err) => {
-        console.error('Connection to Cassandra failed:',err)
+    }).catch((err) => {
+        console.error('Connection to Cassandra failed: ', err);
         console.error('Logging initialisation failed!')
     });
 };
 
 exports.logFatal = (_msg) => {
-    if(logConfigs.logLevel < 1)
+    if (logConfigs.logLevel < 2)
         return;
 
     let msg = {
@@ -61,48 +73,34 @@ exports.logFatal = (_msg) => {
 };
 
 exports.logError = (_msg) => {
-    if(initLogLevel < 2)
+    if (initLogLevel < 3)
         return;
 
     let msg = {
         taskId: logConfigs.taskId,
         component: logConfigs.component,
         time: moment().toISOString(),
-        logLevel: logLevels.ERROR,
+        logLevel: logLevelsMap[logLevels.ERROR],
         text: _msg
     };
     cassandra.insertLog(msg);
 };
 
 exports.logWarn = (_msg) => {
-    if(initLogLevel < 3)
+    if (initLogLevel < 4)
         return;
 
     let msg = {
         taskId: logConfigs.taskId,
         component: logConfigs.component,
         time: moment().toISOString(),
-        logLevel: logLevels.WARN,
+        logLevel: logLevelsMap[logLevels.WARN],
         text: _msg
     };
     cassandra.insertLog(msg);
 };
 
 exports.logInfo = (_msg) => {
-    if (initLogLevel >= 4)
-        return;
-
-    let msg = {
-        taskId: logConfigs.taskId,
-        component: logConfigs.component,
-        time: moment().toISOString(),
-        logLevel: logLevels.INFO,
-        text: _msg
-    };
-    cassandra.insertLog(msg);
-};
-
-exports.logDebug = (_msg) => {
     if (initLogLevel < 5)
         return;
 
@@ -110,13 +108,13 @@ exports.logDebug = (_msg) => {
         taskId: logConfigs.taskId,
         component: logConfigs.component,
         time: moment().toISOString(),
-        logLevel: logLevels.DEBUG,
+        logLevel: logLevelsMap[logLevels.INFO],
         text: _msg
     };
     cassandra.insertLog(msg);
 };
 
-exports.logTrace = (_msg) => {
+exports.logDebug = (_msg) => {
     if (initLogLevel < 6)
         return;
 
@@ -124,7 +122,21 @@ exports.logTrace = (_msg) => {
         taskId: logConfigs.taskId,
         component: logConfigs.component,
         time: moment().toISOString(),
-        logLevel: logLevels.TRACE,
+        logLevel: logLevelsMap[logLevels.DEBUG],
+        text: _msg
+    };
+    cassandra.insertLog(msg);
+};
+
+exports.logTrace = (_msg) => {
+    if (initLogLevel < 7)
+        return;
+
+    let msg = {
+        taskId: logConfigs.taskId,
+        component: logConfigs.component,
+        time: moment().toISOString(),
+        logLevel: logLevelsMap[logLevels.TRACE],
         text: _msg
     };
     cassandra.insertLog(msg);

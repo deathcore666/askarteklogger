@@ -9,8 +9,6 @@ let clientReady = true;
 let keyspace = null;
 
 exports.connect = (config) => {
-    console.log('Initialising database connection...');
-
     tableName = config.tableName;
     keyspace = config.keyspace;
     client = new cassandra.Client({
@@ -23,14 +21,14 @@ exports.connect = (config) => {
             if(err) {
                 reject(err);
             } else {
-                resolve('Connected successfully')
+                resolve();
             }
         })
     })
 };
 
 exports.insertLog = (msg) => {
-    const query = 'INSERT INTO'+ keyspace +'.' + tableName +
+    const query = 'INSERT INTO '+ keyspace +'.' + tableName +
         ' (taskid, time, service, loglevel, text) VALUES (?, ? , ?, ?, ?)';
 
     const params = [msg.taskId, msg.time, msg.component, msg.logLevel, msg.text];
