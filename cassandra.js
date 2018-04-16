@@ -1,11 +1,7 @@
 const cassandra = require('cassandra-driver');
-const async = require('async');
-const path = require('path');
-const fs = require('fs');
 
 let client = null;
 let tableName = null;
-let clientReady = true;
 let keyspace = null;
 
 exports.connect = (config) => {
@@ -35,20 +31,7 @@ exports.insertLog = (msg) => {
     client.execute(query, params, {prepare: true}, onInsertLog)
 };
 
-const onNewClient = (err) => {
-    if (err) {
-        console.error('Failed to connect to a database:'+  err);
-        clientReady = false;
-        return
-    }
-    console.log('Connection established with Cassandra!');
-
-};
-
 const onInsertLog = (err) => {
-    if (err) {
-        console.error('Log inserttion failed:', err);
-        return;
-    }
-    console.log('Log inserted successfully!');
+    if (err)
+        console.error('Log insertion failed:', err);
 };

@@ -15,11 +15,11 @@ const logLevelsMap = {
 };
 
 const defaultConfigs = {
-    contactPoints: ['192.168.0.166'],
-    keyspace: 'logs',
-    tableName: 'testlogs1',
+    contactPoints: ['0.0.0.0'],
+    keyspace: '',
+    tableName: '',
     taskId: 0,
-    component: "",
+    component: '',
 };
 
 let logConfigs = null;
