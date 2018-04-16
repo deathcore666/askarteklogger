@@ -16,6 +16,7 @@
     "cassandra-driver": "^3.4.1",
     "fs": "0.0.1-security",
     "ip": "^1.1.5",
+    "lodash": "^4.17.5",
     "mkdirp": "^0.5.1",
     "moment": "^2.22.0",
     "os": "^0.1.1",
