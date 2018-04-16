@@ -1,10 +1,7 @@
 const moment = require('moment');
-const fs = require('fs');
-const path = require('path');
 
 const cassandra = require('./cassandra');
 const logLevels = require('./constants/logLevels');
-const configPath = './configs';
 
 const logLevelsMap = {
     0: 'OFF',
@@ -45,6 +42,7 @@ exports.init = (configs) => {
         console.log('Service file logging initialised successfully!');
     },(err) => {
         console.error('Connection to Cassandra failed:',err)
+        console.error('Logging initialisation failed!')
     });
 };
 
