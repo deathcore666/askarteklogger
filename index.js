@@ -20,6 +20,7 @@ const defaultConfigs = {
     tableName: '',
     taskId: 0,
     component: '',
+    logLevel: logLevels.OFF,
 };
 
 let logConfigs = null;
@@ -45,16 +46,16 @@ exports.init = (configs) => {
     let valid = validateConfigs(configs);
     valid.then(() => {
         logConfigs = configs;
+
+        let connect = cassandra.connect(logConfigs);
+        connect.then((result) => {
+        }).catch((err) => {
+            console.error('Connection to Cassandra failed: ', err);
+            console.error('Logging initialisation failed!')
+        });
     }).catch((err) => {
         console.error('Configs validation failed: ', err);
         logConfigs = defaultConfigs;
-    });
-
-    let connect = cassandra.connect(defaultConfigs);
-    connect.then((result) => {
-    }).catch((err) => {
-        console.error('Connection to Cassandra failed: ', err);
-        console.error('Logging initialisation failed!')
     });
 };
 

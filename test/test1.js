@@ -12,10 +12,12 @@ const configs = {
 };
 
 logger.init(configs);
-logger.logFatal('f');
-logger.logError('e');
-logger.logInfo('i');
-logger.logDebug('d');
-logger.logTrace('t');
+setTimeout(() => {
+    logger.logFatal('f');
+    logger.logError('e');
+    logger.logInfo('i');
+    logger.logDebug('d');
+    logger.logTrace('t');
+}, 1000);
 
 // logger.logFatal('FATALITY');
