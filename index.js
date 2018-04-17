@@ -18,7 +18,6 @@ const defaultConfigs = {
     contactPoints: ['0.0.0.0'],
     keyspace: '',
     tableName: '',
-    taskId: 0,
     component: '',
     logLevel: logLevels.OFF
 };
@@ -35,7 +34,7 @@ exports.init = (configs) => {
 
     let configsAreInvalid = checkConfigs(configs);
     if(configsAreInvalid) {
-        console.error('Configs validation failed:', isConfigsValid);
+        console.error('Configs validation failed:', configsAreInvalid);
         logConfigs = defaultConfigs;
     } else {
         logConfigs = configs;
@@ -100,12 +99,12 @@ const connectToDB = (configs) => {
     })
 };
 
-exports.logFatal = (_msg) => {
+exports.logFatal = (_msg, taskId) => {
     if (logConfigs.logLevel < logLevels.FATAL)
         return;
 
     let msg = {
-        taskId: logConfigs.taskId,
+        taskId: taskId,
         component: logConfigs.component,
         time: moment().toISOString(),
         logLevel: logLevelsMap[logLevels.FATAL],
@@ -114,12 +113,12 @@ exports.logFatal = (_msg) => {
     queue.push(msg);
 };
 
-exports.logError = (_msg) => {
+exports.logError = (_msg, taskId) => {
     if (logConfigs.logLevel < logLevels.ERROR)
         return;
 
     let msg = {
-        taskId: logConfigs.taskId,
+        taskId: taskId,
         component: logConfigs.component,
         time: moment().toISOString(),
         logLevel: logLevelsMap[logLevels.ERROR],
@@ -128,12 +127,12 @@ exports.logError = (_msg) => {
     queue.push(msg);
 };
 
-exports.logWarn = (_msg) => {
+exports.logWarn = (_msg, taskId) => {
     if (logConfigs.logLevel < logLevels.WARN)
         return;
 
     let msg = {
-        taskId: logConfigs.taskId,
+        taskId: taskId,
         component: logConfigs.component,
         time: moment().toISOString(),
         logLevel: logLevelsMap[logLevels.WARN],
@@ -142,12 +141,12 @@ exports.logWarn = (_msg) => {
     queue.push(msg);
 };
 
-exports.logInfo = (_msg) => {
+exports.logInfo = (_msg, taskId) => {
     if (logConfigs.logLevel < logLevels.INFO)
         return;
 
     let msg = {
-        taskId: logConfigs.taskId,
+        taskId: taskId,
         component: logConfigs.component,
         time: moment().toISOString(),
         logLevel: logLevelsMap[logLevels.INFO],
@@ -156,12 +155,12 @@ exports.logInfo = (_msg) => {
     queue.push(msg);
 };
 
-exports.logDebug = (_msg) => {
+exports.logDebug = (_msg, taskId) => {
     if (logConfigs.logLevel < logLevels.DEBUG)
         return;
 
     let msg = {
-        taskId: logConfigs.taskId,
+        taskId: taskId,
         component: logConfigs.component,
         time: moment().toISOString(),
         logLevel: logLevelsMap[logLevels.DEBUG],
@@ -170,12 +169,12 @@ exports.logDebug = (_msg) => {
     queue.push(msg);
 };
 
-exports.logTrace = (_msg) => {
+exports.logTrace = (_msg, taskId) => {
     if (logConfigs.logLevel < logLevels.TRACE)
         return;
 
     let msg = {
-        taskId: logConfigs.taskId,
+        taskId: taskId,
         component: logConfigs.component,
         time: moment().toISOString(),
         logLevel: logLevelsMap[logLevels.TRACE],

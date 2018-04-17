@@ -6,18 +6,10 @@ const configs = {
     contactPoints: ['192.168.1.166'],
     keyspace: 'logs',
     tableName: 'testlogs1',
-    taskId: 0,
     component: "M1-1",
     logLevel: logLevels.TRACE
 };
 
-logger.init(configs);
-setTimeout(() => {
-    logger.logFatal('f');
-    logger.logError('e');
-    logger.logInfo('i');
-    logger.logDebug('d');
-    logger.logTrace('t');
-}, 1000);
+
 
 // logger.logFatal('FATALITY');
