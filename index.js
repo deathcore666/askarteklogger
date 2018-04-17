@@ -33,8 +33,8 @@ let query = null;
 
 exports.init = (configs) => {
 
-    let isConfigsValid = invalidConfigs(configs);
-    if(isConfigsValid) {
+    let configsAreInvalid = checkConfigs(configs);
+    if(configsAreInvalid) {
         console.error('Configs validation failed:', isConfigsValid);
         logConfigs = defaultConfigs;
     } else {
@@ -48,7 +48,7 @@ exports.init = (configs) => {
     setInterval(sendQueue, 500);
 };
 
-const invalidConfigs = (configs) => {
+const checkConfigs = (configs) => {
 
     for (let key in defaultConfigs) {
         if (!(_.has(configs, key)))
