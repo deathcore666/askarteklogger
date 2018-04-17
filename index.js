@@ -1,7 +1,7 @@
 const moment = require('moment');
 const _ = require('lodash');
+const cassandra = require('cassandra-driver');
 
-const cassandra = require('./cassandra');
 const logLevels = require('./constants/logLevels');
 
 const logLevelsMap = {
@@ -20,47 +20,89 @@ const defaultConfigs = {
     tableName: '',
     taskId: 0,
     component: '',
-    logLevel: logLevels.OFF,
+    logLevel: logLevels.OFF
 };
 
 let logConfigs = null;
-let initLogLevel = null;
-
-const validateConfigs = (configs) => {
-    return new Promise((resolve, reject) => {
-        for (let key in defaultConfigs) {
-            if (!(_.has(configs, key)))
-                reject(`${key} is missing from config list`);
-        }
-
-        if (configs.contactPoints.length < 1) {
-            reject(`${configs.contactPoints} must have at least 1 item`);
-        }
-
-    });
-};
+let queue = [];
+let client = null;
+let tableName = null;
+let keyspace = null;
+let isConnected = false;
+let query = null;
 
 exports.init = (configs) => {
-    //Setting default settings if none provided
 
-    let valid = validateConfigs(configs);
-    valid.then(() => {
-        logConfigs = configs;
-
-        let connect = cassandra.connect(logConfigs);
-        connect.then((result) => {
-        }).catch((err) => {
-            console.error('Connection to Cassandra failed: ', err);
-            console.error('Logging initialisation failed!')
-        });
-    }).catch((err) => {
-        console.error('Configs validation failed: ', err);
+    let isConfigsValid = invalidConfigs(configs);
+    if(isConfigsValid) {
+        console.error('Configs validation failed:', isConfigsValid);
         logConfigs = defaultConfigs;
+    } else {
+        logConfigs = configs;
+    }
+
+    query = 'INSERT INTO '+ logConfigs.keyspace +'.' + logConfigs.tableName +
+        ' (taskid, time, service, loglevel, text) VALUES (?, ? , ?, ?, ?)';
+    connectToDB(logConfigs);
+    setInterval(sendQueue, 500);
+};
+
+const invalidConfigs = (configs) => {
+
+    for (let key in defaultConfigs) {
+        if (!(_.has(configs, key)))
+            return (`${key} is missing from config list`);
+    }
+
+    if (configs.contactPoints.length < 1)
+        return (`${configs.contactPoints} must have at least 1 item`);
+
+    return false;
+};
+
+const sendQueue = () => {
+    let qlen = queue.length;
+
+    if (qlen === 0 || !isConnected)
+        return;
+
+    for(let i in queue) {
+        let params = [queue[i].taskId, queue[i].time, queue[i].component, queue[i].logLevel, queue[i].text];
+        console.log('params:', params);
+        try{
+            client.execute(query, params, { prepare: true }, (err)=>{
+                if(err) {
+                    console.error('Log insertion failed: ', err);
+                } else {
+                    console.log('Inserted');
+                    queue.splice(0, qlen)
+                }
+            })
+        } catch (err) {
+            console.error('Log insertion failed: ', err);
+        }
+    }
+};
+
+const connectToDB = (configs) => {
+    tableName = configs.tableName;
+    keyspace = configs.keyspace;
+    client = new cassandra.Client({
+        contactPoints: configs.contactPoints,
+        keyspace: configs.keyspace,
     });
+
+    client.connect((err) => {
+        if(err) {
+            console.error('Connection to database server failed: ', err);
+            return;
+        }
+        isConnected = true;
+    })
 };
 
 exports.logFatal = (_msg) => {
-    if (logConfigs.logLevel < 2)
+    if (logConfigs.logLevel < logLevels.FATAL)
         return;
 
     let msg = {
@@ -70,11 +112,11 @@ exports.logFatal = (_msg) => {
         logLevel: logLevelsMap[logLevels.FATAL],
         text: _msg
     };
-    cassandra.insertLog(msg);
+    queue.push(msg);
 };
 
 exports.logError = (_msg) => {
-    if (initLogLevel < 3)
+    if (logConfigs.logLevel < logLevels.ERROR)
         return;
 
     let msg = {
@@ -84,11 +126,11 @@ exports.logError = (_msg) => {
         logLevel: logLevelsMap[logLevels.ERROR],
         text: _msg
     };
-    cassandra.insertLog(msg);
+    queue.push(msg);
 };
 
 exports.logWarn = (_msg) => {
-    if (initLogLevel < 4)
+    if (logConfigs.logLevel < logLevels.WARN)
         return;
 
     let msg = {
@@ -98,11 +140,11 @@ exports.logWarn = (_msg) => {
         logLevel: logLevelsMap[logLevels.WARN],
         text: _msg
     };
-    cassandra.insertLog(msg);
+    queue.push(msg);
 };
 
 exports.logInfo = (_msg) => {
-    if (initLogLevel < 5)
+    if (logConfigs.logLevel < logLevels.INFO)
         return;
 
     let msg = {
@@ -112,11 +154,11 @@ exports.logInfo = (_msg) => {
         logLevel: logLevelsMap[logLevels.INFO],
         text: _msg
     };
-    cassandra.insertLog(msg);
+    queue.push(msg);
 };
 
 exports.logDebug = (_msg) => {
-    if (initLogLevel < 6)
+    if (logConfigs.logLevel < logLevels.DEBUG)
         return;
 
     let msg = {
@@ -126,11 +168,11 @@ exports.logDebug = (_msg) => {
         logLevel: logLevelsMap[logLevels.DEBUG],
         text: _msg
     };
-    cassandra.insertLog(msg);
+    queue.push(msg);
 };
 
 exports.logTrace = (_msg) => {
-    if (initLogLevel < 7)
+    if (logConfigs.logLevel < logLevels.TRACE)
         return;
 
     let msg = {
@@ -140,5 +182,5 @@ exports.logTrace = (_msg) => {
         logLevel: logLevelsMap[logLevels.TRACE],
         text: _msg
     };
-    cassandra.insertLog(msg);
+    queue.push(msg);
 };
