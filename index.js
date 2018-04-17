@@ -43,6 +43,7 @@ exports.init = (configs) => {
 
     query = 'INSERT INTO '+ logConfigs.keyspace +'.' + logConfigs.tableName +
         ' (taskid, time, service, loglevel, text) VALUES (?, ? , ?, ?, ?)';
+
     connectToDB(logConfigs);
     setInterval(sendQueue, 500);
 };
@@ -68,13 +69,11 @@ const sendQueue = () => {
 
     for(let i in queue) {
         let params = [queue[i].taskId, queue[i].time, queue[i].component, queue[i].logLevel, queue[i].text];
-        console.log('params:', params);
         try{
             client.execute(query, params, { prepare: true }, (err)=>{
                 if(err) {
                     console.error('Log insertion failed: ', err);
                 } else {
-                    console.log('Inserted');
                     queue.splice(0, qlen)
                 }
             })
