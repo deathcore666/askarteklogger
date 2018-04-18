@@ -41,7 +41,7 @@ exports.init = (configs) => {
     }
 
     query = 'INSERT INTO '+ logConfigs.keyspace +'.' + logConfigs.tableName +
-        ' (taskid, time, service, loglevel, text) VALUES (?, ? , ?, ?, ?)';
+        ' (task_id, date_created, component, level, message) VALUES (?, ? , ?, ?, ?)';
 
     connectToDB(logConfigs);
     setInterval(sendQueue, 500);
@@ -99,17 +99,21 @@ const connectToDB = (configs) => {
     })
 };
 
+const getMessage = (taskId, logLevel, msg) => {
+    return {
+        taskId: taskId,
+        component: logConfigs.component,
+        time: moment().toISOString(),
+        logLevel: logLevel,
+        text: msg
+    };
+};
+
 exports.logFatal = (_msg, taskId) => {
     if (logConfigs.logLevel < logLevels.FATAL)
         return;
 
-    let msg = {
-        taskId: taskId,
-        component: logConfigs.component,
-        time: moment().toISOString(),
-        logLevel: logLevelsMap[logLevels.FATAL],
-        text: _msg
-    };
+    let msg = getMessage(taskId, logLevels.FATAL, _msg);
     queue.push(msg);
 };
 
@@ -117,13 +121,7 @@ exports.logError = (_msg, taskId) => {
     if (logConfigs.logLevel < logLevels.ERROR)
         return;
 
-    let msg = {
-        taskId: taskId,
-        component: logConfigs.component,
-        time: moment().toISOString(),
-        logLevel: logLevelsMap[logLevels.ERROR],
-        text: _msg
-    };
+    let msg = getMessage(taskId, logLevels.ERROR, _msg);
     queue.push(msg);
 };
 
@@ -131,13 +129,7 @@ exports.logWarn = (_msg, taskId) => {
     if (logConfigs.logLevel < logLevels.WARN)
         return;
 
-    let msg = {
-        taskId: taskId,
-        component: logConfigs.component,
-        time: moment().toISOString(),
-        logLevel: logLevelsMap[logLevels.WARN],
-        text: _msg
-    };
+    let msg = getMessage(taskId, logLevels.WARN, _msg);
     queue.push(msg);
 };
 
@@ -145,13 +137,7 @@ exports.logInfo = (_msg, taskId) => {
     if (logConfigs.logLevel < logLevels.INFO)
         return;
 
-    let msg = {
-        taskId: taskId,
-        component: logConfigs.component,
-        time: moment().toISOString(),
-        logLevel: logLevelsMap[logLevels.INFO],
-        text: _msg
-    };
+    let msg = getMessage(taskId, logLevels.INFO, _msg);
     queue.push(msg);
 };
 
@@ -159,13 +145,7 @@ exports.logDebug = (_msg, taskId) => {
     if (logConfigs.logLevel < logLevels.DEBUG)
         return;
 
-    let msg = {
-        taskId: taskId,
-        component: logConfigs.component,
-        time: moment().toISOString(),
-        logLevel: logLevelsMap[logLevels.DEBUG],
-        text: _msg
-    };
+    let msg = getMessage(taskId, logLevels.DEBUG, _msg);
     queue.push(msg);
 };
 
@@ -173,12 +153,6 @@ exports.logTrace = (_msg, taskId) => {
     if (logConfigs.logLevel < logLevels.TRACE)
         return;
 
-    let msg = {
-        taskId: taskId,
-        component: logConfigs.component,
-        time: moment().toISOString(),
-        logLevel: logLevelsMap[logLevels.TRACE],
-        text: _msg
-    };
+    let msg = getMessage(taskId, logLevels.TRACE, _msg);
     queue.push(msg);
 };
