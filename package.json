@@ -1,6 +1,6 @@
 {
   "name": "askarteklogger",
-  "version": "3.2.0",
+  "version": "3.3.0",
   "description": "Simple logger",
   "main": "index.js",
   "scripts": {
