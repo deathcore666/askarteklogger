@@ -21,7 +21,7 @@ function getCallback() {
 }
 
 function writeFile() {
-
+    fs.
 }
 
 setInterval(getCallback, 1500);

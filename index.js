@@ -83,8 +83,13 @@ const writeToFile = () => {
 };
 
 const sendFromFiles = () => {
+    let logFiles = {};
+    try {
+        logFiles = fs.readdirSync(logDir);
+    } catch (e) {
+        console.error('Error opening directory' + logDir + ' :', e)
+    }
 
-    let logFiles = fs.readdirSync(logDir);
     for (let i in logFiles) {
         let currLogFile = logFiles[i];
 
