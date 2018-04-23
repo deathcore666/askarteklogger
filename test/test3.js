@@ -1,3 +1,5 @@
+const fs = require('fs');
+
 const logger = require('../index');
 const logLevels = require('../constants/logLevels');
 
@@ -6,8 +8,20 @@ const configs = {
     keyspace: 'logs',
     tableName: 'testlogs',
     component: 'M2-3',
-    logLevel: logLevels.TRACE
+    logLevel: logLevels.TRACE,
+    localLogLimit: 50,
 };
 
 logger.init(configs);
-logger.logTrace('test hi', 'task2');
+let i = 0;
+
+function getCallback() {
+    logger.logDebug('test debug message: '+ i++, '123');
+    console.log('i:', i);
+}
+
+function writeFile() {
+
+}
+
+setInterval(getCallback, 1500);
