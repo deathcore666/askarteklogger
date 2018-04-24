@@ -3,6 +3,7 @@ const _ = require('lodash');
 const cassandra = require('cassandra-driver');
 const fs = require('fs');
 const path = require('path');
+const mkdirp = require('mkdirp');
 
 const logLevels = require('./constants/logLevels');
 
@@ -37,6 +38,12 @@ exports.init = (configs) => {
         logConfigs = configs;
         logLimit = configs.localLogLimit;
     }
+    mkdirp.sync(logDir, function (err) {
+        if (err) {
+            console.error('Can\'t open or create directory for temp logs: ' + logDir + '. Error : ' + err);
+            throw (err);
+        }
+    });
 
     let logFiles = fs.readdirSync(logDir);
     numOfFilesPending = logFiles.length;
