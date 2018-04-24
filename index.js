@@ -3,10 +3,8 @@ const _ = require('lodash');
 const cassandra = require('cassandra-driver');
 const fs = require('fs');
 const path = require('path');
-const lineReader = require('readline');
 
 const logLevels = require('./constants/logLevels');
-const logDir = './pendingLogs/';
 
 const defaultConfigs = {
     contactPoints: ['0.0.0.0'],
@@ -16,15 +14,17 @@ const defaultConfigs = {
     logLevel: logLevels.OFF,
     localLogLimit: 500,
 };
+const logDir = './pendingLogs/';
 
 let logConfigs = null;
 let queue = [];
 let client = null;
-let tableName = null;
 let isConnected = false;
 let query = null;
 let numOfFilesPending = 0;
+let linesWrittenToFile = 0;
 let logLimit = 0;
+let currLogFile = '';
 
 exports.init = (configs) => {
 
@@ -40,7 +40,6 @@ exports.init = (configs) => {
 
     let logFiles = fs.readdirSync(logDir);
     numOfFilesPending = logFiles.length;
-    console.log('numOfPending:', numOfFilesPending);
 
     query = 'INSERT INTO ' + logConfigs.keyspace + '.' + logConfigs.tableName +
         ' (task_id, date_created, component, level, message) VALUES (?, ? , ?, ?, ?)';
@@ -68,29 +67,41 @@ const checkConfigs = (configs) => {
 
 const writeToFile = () => {
     let fileQueue = queue;
+    let qlen = fileQueue.length;
+
+    currLogFile = logDir + 'logs' + moment().format('hhmmDDMMYY').toString() + numOfFilesPending.toString() + '.txt';
+
+    for (let i = 0; i < qlen; i++) {
+        try {
+            fs.appendFileSync(currLogFile, (JSON.stringify(fileQueue[i])) + '\n');
+            linesWrittenToFile++;
+        }
+        catch
+            (err) {
+            console.error('Error writing to file:', err);
+            return;
+        }
+    }
+
     queue = [];
-    numOfFilesPending++;
 
-    let file = fs.createWriteStream(logDir + '/logs' + numOfFilesPending.toString() + '.txt');
-
-    try {
-        fileQueue.forEach((v) => {
-            file.write((JSON.stringify(v)) + '\n')
-        })
-    } catch (e) {
-        console.error('Error writing to file:', e)
+    if (linesWrittenToFile >= logLimit) {
+        numOfFilesPending++;
     }
 };
 
 const sendFromFiles = () => {
     let logFiles = {};
+
     try {
         logFiles = fs.readdirSync(logDir);
-    } catch (e) {
-        console.error('Error opening directory' + logDir + ' :', e)
+    } catch (err) {
+        console.error('Error reading directory ' + logDir + ' :', err);
+        return;
     }
 
     for (let i in logFiles) {
+        let isReadError = false;
         let currLogFile = logFiles[i];
 
         if (path.extname(currLogFile) !== '.txt') continue;
@@ -99,80 +110,83 @@ const sendFromFiles = () => {
         let currFilePath = path.join(logDir, currLogFile);
 
         try {
-            currLog = fs.readFileSync(currFilePath,'utf-8').split('\n');
-
-        } catch (e) {
-            console.error('Insertion from file ' + currLogFile + ' failed: ', e);
+            currLog = fs.readFileSync(currFilePath, 'utf-8').split('\n');
+        } catch (err) {
+            console.error('Can\'t open ' + currLogFile + ' file: ', err);
+            isReadError = true;
         }
 
-        let queries = [];
+        if (!isReadError) {
+            let queries = [];
 
-        for (let i in currLog) {
-            if(currLog[i] === '') continue;
+            for (let i in currLog) {
+                if (currLog[i] === '') continue;
 
-            let line = JSON.parse(currLog[i]);
-            let params = [line.taskId, line.time, line.component, line.logLevel, line.text];
+                let line = {};
+                try {
+                    line = JSON.parse(currLog[i]);
+                } catch (err) {
+                    console.error('Error reading log record: ', err);
+                    continue;
+                }
 
-            queries.push({
-                query: query,
-                params: params
-            });
-        }
+                let params = [line.taskId, line.time, line.component, line.logLevel, line.text];
 
-        try {
-            client.batch(queries, {prepare: true}, (err) => {
-                if (err) {
-                    console.error('Log insertion failed: ', err);
-                } else {
+                queries.push({
+                    query: query,
+                    params: params
+                });
+            }
+
+            client.batch(queries, {prepare: true})
+                .then(function () {
                     numOfFilesPending--;
                     fs.unlinkSync(currFilePath);
-                }
-            })
-        } catch (err) {
-            console.error('Insertion from file ' + currLogFile + ' failed: ', err);
+                })
+                .catch(function (err) {
+                    console.error('Log insertion from file ' + currLogFile + ' failed: ', err);
+                })
         }
-
     }
 };
 
 const sendQueue = () => {
-    let qlen = queue.length;
-
-    if (qlen >= logLimit) {
-        writeToFile();
-        return;
-    }
+    let pendingQueue = queue;
+    let qlen = pendingQueue.length;
 
     if (numOfFilesPending > 0 && isConnected) {
         sendFromFiles();
     }
 
-    if (qlen === 0 || !isConnected) {
+    if (qlen === 0) {
         return;
+    }
+
+    if (!isConnected) {
+        writeToFile();
     }
 
     let queries = [];
 
-    for (let i in queue) {
-        let params = [queue[i].taskId, queue[i].time, queue[i].component, queue[i].logLevel, queue[i].text];
+    for (let i in pendingQueue) {
+        let params = [pendingQueue[i].taskId, pendingQueue[i].time, pendingQueue[i].component,
+            pendingQueue[i].logLevel, pendingQueue[i].text];
+
         queries.push({
             query: query,
             params: params
         });
-        queue.splice(0, qlen)
+        pendingQueue.splice(0, qlen)
     }
 
-    try {
-        client.batch(queries, {prepare: true}, (err) => {
-            if (err) {
-                console.log('Log insertion failed: ', err);
-            }
+    client.batch(queries, {prepare: true})
+        .then(function () {
+            queue = [];
         })
-    } catch (err) {
-        console.log('Log insertion failed2: ', err);
-    }
-
-
+        .catch(function (err) {
+            console.error('Error executing insertion: ', err);
+            mockConnection();
+        })
 };
 
 const mockConnection = () => {
@@ -184,7 +198,7 @@ const mockConnection = () => {
 
     client.connect((err) => {
         if (err) {
-            console.error('Connection to database server failed: ', err);
+            console.error('Connection to log database server failed: ', err);
             isConnected = false;
             return;
         }
