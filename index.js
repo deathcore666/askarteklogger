@@ -140,7 +140,7 @@ const sendFromFiles = () => {
                 let params = [line.taskId, line.time, line.component, line.logLevel, line.text];
 
                 queries.push({
-                    query: query,
+                    query: query, // 'INSERT INTO'
                     params: params
                 });
             }
@@ -161,7 +161,7 @@ const sendQueue = () => {
     let pendingQueue = queue;
     let qlen = pendingQueue.length;
 
-    if (numOfFilesPending > 0 && isConnected) {
+    if (isConnected) {
         sendFromFiles();
     }
 

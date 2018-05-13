@@ -1,5 +1,6 @@
 const fs = require('fs');
 const moment = require('moment');
+c
 
 const logger = require('../index');
 const logLevels = require('../constants/logLevels');
@@ -53,6 +54,6 @@ function cass() {
 
 // fileCF();
 // cass();
-setInterval(getCallback, 600);
+// setInterval(getCallback, 600);
 // console.log('time:', moment().format('hhmmDDMMYY'));
 
